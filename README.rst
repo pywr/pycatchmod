@@ -10,6 +10,7 @@ Features
 ========
 
 pycatchmod includes the following features,
+
  - Core CATCHMOD algorithm written in Cython for speed,
  - Simultaneous simulation of multiple input timeseries with the same catchment parameters, and
  - Integration with numpy arrays.
@@ -19,6 +20,7 @@ TODO
 ====
 
 The following features are planned, but yet to be completed (patches welcome!),
+
  - Input-output routines to load input timeseries and save outputs,
  - Integration with pandas.Series and/or DataFrames, and
  - Implementation of Oudin (2005) PET formula to calculate PET from temperature.
