@@ -1,1 +1,1 @@
-from _catchmod import SoilMoistureDeficitStore, LinearStore, NonLinearStore, SubCatchment, Catchment
+from _catchmod import SoilMoistureDeficitStore, LinearStore, NonLinearStore, SubCatchment, Catchment, OudinCatchment

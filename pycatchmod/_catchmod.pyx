@@ -234,13 +234,113 @@ cdef class Catchment:
     def __init__(self, subcatchments):
         self.subcatchments = list(subcatchments)
 
-    cpdef step(self, double[:] rainfall, double[:] pet, double[:, :] percolation, double[:, :] outflow):
-        """ Step the subcatchment one timestep
+    cpdef int step(self, double[:] rainfall, double[:] pet, double[:, :] percolation, double[:, :] outflow):
+        """ Step the catchment one timestep
         """
         cdef int i
         cdef SubCatchment subcatchment
         for i, subcatchment in enumerate(self.subcatchments):
             subcatchment.step(rainfall, pet, percolation[i, :], outflow[i, :])
+
+
+
+cpdef double declination(int day_of_year):
+    """
+    Declination, the angular position of the sun at solar noon (i.e., when the sun is on the
+    local meridian) with respect to the plane of the equator, north positive; −23.45 deg ≤ δ ≤ 23.45 deg
+
+    Reference,
+        Duffie & Beckman, Solar Engineering of Thermal Processes (Fourth Edition), 2013
+            Equation 1.6.1a
+
+    """
+    return np.pi*(23.45/180.0) * np.sin(2*np.pi*(284 + day_of_year)/365)
+
+
+cpdef double sunset_hour_angle(double latitude, double declination):
+    """
+
+    Reference,
+        Duffie & Beckman, Solar Engineering of Thermal Processes (Fourth Edition), 2013
+            Equation 1.6.10
+    """
+    return np.arccos(-np.tan(latitude)*np.tan(declination))
+
+
+cpdef double daily_extraterrestrial_radiation(int day_of_year, double latitude, double declination,
+                                              double sunset_hour_angle):
+    """
+    Compute daily total extraterrestrial radiation in MJ m-2 day-1
+
+    Reference,
+        Duffie & Beckman, Solar Engineering of Thermal Processes (Fourth Edition), 2013
+            Equation 1.10.3
+    """
+    cdef double solar_constant = 1367  # W/m2
+
+    cdef double H = 24 * 3600 * solar_constant / np.pi
+    H *= 1 + 0.033*np.cos(2*np.pi*day_of_year/365)
+    H *= np.cos(latitude)*np.cos(declination)*np.sin(sunset_hour_angle) + sunset_hour_angle*np.sin(latitude)*np.sin(declination)
+    return H/1e6  # Convert to MJ m-2 day-1
+
+
+cpdef pet_oudin(int day_of_year, double latitude, double[:] temperature, double[:] pet):
+    """ Estimate PET using the formula propsed by Oudin (2005)
+
+    This model uses daily mean temperature to estimate PET based on the Julien day of year and latitude. The later
+    are used to estimate extraterrestrial solar radiation.
+
+    Reference,
+        Ludovic Oudin et al, Which potential evapotranspiration input for a lumped rainfall–runoff model?:
+        Part 2—Towards a simple and efficient potential evapotranspiration model for rainfall–runoff modelling,
+        Journal of Hydrology, Volume 303, Issues 1–4, 1 March 2005, Pages 290-306, ISSN 0022-1694,
+        http://dx.doi.org/10.1016/j.jhydrol.2004.08.026.
+        (http://www.sciencedirect.com/science/article/pii/S0022169404004056)
+
+    """
+    cdef int i
+    cdef double dec, w, R
+    cdef double gamma = 2.45 # the latent heat flux (MJ kg−1)
+    cdef double rho = 1000.0 # density of water (kg m-3)
+
+    # Calculate the extraterrestrial radiation for all temperature estimates
+    dec = declination(day_of_year)
+    w = sunset_hour_angle(latitude, dec)
+    R = daily_extraterrestrial_radiation(day_of_year, latitude, dec, w)
+
+    for i in range(temperature.shape[0]):
+        if temperature[i] > -5.0:
+            pet[i] = R/(gamma*rho)
+            pet[i] *= (temperature[i] + 5.0)/100.0
+            pet[i] *= 1000.0  # m/day -> mm/day
+        else:
+            pet[i] = 0.0
+
+
+cdef class OudinCatchment:
+    """
+    """
+    cdef list subcatchments
+    cdef public double latitude
+    def __init__(self, subcatchments, double latitude):
+        self.latitude = latitude
+        self.subcatchments = list(subcatchments)
+
+    cpdef int step(self, int day_of_year, double[:] rainfall, double[:] temperature, double[:] pet,
+               double[:, :] percolation, double[:, :] outflow):
+        """ Step the catchment one timestep
+
+        This method overloadds Catchment.step to pre-calculate PET
+        """
+        cdef int i
+        cdef SubCatchment subcatchment
+        # Calculate PET first
+        pet_oudin(day_of_year, self.latitude, temperature, pet)
+
+        for i, subcatchment in enumerate(self.subcatchments):
+            subcatchment.step(rainfall, pet, percolation[i, :], outflow[i, :])
+
+
 
 
 
