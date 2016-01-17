@@ -86,7 +86,7 @@ cdef class RainfallSimulator:
 
         # Calculate the wet probabilities for this day of the year
         p_wd = self.wet_given_dry.value(day_of_year)
-        p_ww = self.wet_given_dry.value(day_of_year)
+        p_ww = self.wet_given_wet.value(day_of_year)
         lmbda = self.intensity.value(day_of_year)
 
         for i in range(N):
