@@ -11,12 +11,21 @@ cdef class AnnualHarmonicModel:
     """
     Simple annual harmonic series model of a parameter.
 
+    The harmonic series is given by the equation,
+
+    $$ v = C_0 + \sum^m_{j=1}{C_j \cos(\frac{ij}{T} + \theta_j}) $$
+
     """
     cdef double mean
     cdef double[:] amplitude
     cdef double[:] phase
 
     def __init__(self, double mean, double[:] amplitude=None, double[:] phase=None):
+        """
+        :param mean: Mean of the series
+        :param amplitude: Array of amplitudes for each frequency in the series
+        :param phase: Array of phase offsets for each frequency in the series
+        """
         self.mean = mean
         if amplitude is not None or phase is not None:
             if amplitude.shape[0] != phase.shape[0]:
@@ -26,6 +35,8 @@ cdef class AnnualHarmonicModel:
         self.phase = phase
 
     cpdef double value(self, double day_of_year):
+        """ Evaluate the model for the given Julian day of the year.
+        """
         cdef double T = 365/(2*np.pi)
         cdef int j
         cdef double out
