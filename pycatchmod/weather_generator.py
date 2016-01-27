@@ -1,10 +1,10 @@
-from ._weather_generator import AnnualHarmonicModel, RainfallSimulator
+from ._weather_generator import AnnualHarmonicModel, RainfallSimulator, TemperatureSimulator, RainfallTemperatureSimulator
 import numpy as np
 from scipy import stats
 import pandas
 
 
-def estimate_precipitation_parameters(df, wet_threshold=0.2, period_length=14, precip_column='rainfall'):
+def estimate_precipitation_parameters(df, wet_threshold=0.2, period_length=14, column='rainfall'):
     """
     Estimate precipitation probability and intensity estimates for wet days given a previous wet
     or dry day.
@@ -33,7 +33,7 @@ def estimate_precipitation_parameters(df, wet_threshold=0.2, period_length=14, p
         lst_period = 365 / period_length
         df.ix[df.period == lst_period, 'period'] = lst_period - 1
     # Flag wet days
-    df['wet'] = df[precip_column] >= wet_threshold
+    df['wet'] = df[column] >= wet_threshold
     # Flag whether the day before was wet
     df['wet_yesterday'] = df['wet'].shift(1)
     # Calculate W|D and W|W
@@ -61,6 +61,22 @@ def estimate_precipitation_parameters(df, wet_threshold=0.2, period_length=14, p
     return p_df
 
 
+def estimate_temperature_parameters(df, column='MEAN_AIR_TEMP'):
+    """
+    Estimate mean and standard deviation parameters of a pandas.DataFrame for column
+
+    This function groups the DataFrame by Julian day of the year and returns mean and standard deviation
+    estimates. It also returns an lag-1 auto-correlation of the column with itself.
+
+    """
+    if 'dayofyear' not in df.columns:
+        # Julian day of year
+        df['dayofyear'] = df.index.dayofyear
+
+    grouped = df.groupby(['wet', 'dayofyear'])[column].agg([len, np.mean, np.std])
+    return grouped, df[column].autocorr(lag=1)
+
+
 def fit_harmonic_model(df, column, nfreq=2):
     """ Use scipy.optimize.leastsq to fit the data in column of the given pandas.DataFrame
     """
@@ -74,3 +90,29 @@ def fit_harmonic_model(df, column, nfreq=2):
     x0 = [df[column].iloc[0], ] + nfreq*[0.0, 0.0]
     params, status = leastsq(fit_func, x0, args=(df, ))
     return AnnualHarmonicModel(params[0], params[1::2], params[2::2])
+
+
+def make_rainfall_temperature_simulator(df, N=1, precip_column='rainfall', temp_column='temperature',
+                                        wet_threshold=0.2, period_length=14):
+
+    # First estimate parameters for precipitation and temperature
+    rain_params = estimate_precipitation_parameters(df, column=precip_column, wet_threshold=wet_threshold,
+                                                       period_length=period_length)
+    temp_params, M1 = estimate_temperature_parameters(df, column=temp_column)
+
+    # Fit an single frequency harmonic model to the four temperature parameters
+    temp_fits = {}
+    for wet_dry in ('wet', 'dry'):
+        for func in ('mean', 'std'):
+            temp_fits['{}_{}'.format(wet_dry, func)] = fit_harmonic_model(temp_params.loc[wet_dry=='wet'], func, nfreq=1)
+
+    # Fit rainfall parameters to a harmonic model
+    rain_fits = {}
+    for param in ('p_wet_given_dry', 'p_wet_given_wet', 'lambda'):
+        rain_fits[param] = fit_harmonic_model(rain_params, param)
+
+    rain_sim = RainfallSimulator(N, rain_fits['p_wet_given_dry'], rain_fits['p_wet_given_wet'], rain_fits['lambda'])
+    temp_sim = TemperatureSimulator(N, M1, temp_fits['mean_wet'], temp_fits['mean_dry'], temp_fits['std_wet'],
+                                    temp_fits['std_dry'])
+
+    return RainfallTemperatureSimulator(N, rain_sim, temp_sim)
