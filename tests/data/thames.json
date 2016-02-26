@@ -1,0 +1,44 @@
+{
+  "name" : "Thames",
+  "subcatchments" : [
+    {
+      "name" : "Aquifers",
+      "area" : 3900.0,
+      "potential_drying_constant": 80.0,
+      "gradient_drying_curve": 0.3,
+      "direct_percolation": 20.0,
+      "initial_upper_deficit" : 0.0,
+      "initial_lower_deficit" : 0.0,
+      "linear_storage_constant" : 20.0,
+      "nonlinear_storage_constant" : 300.0,
+      "initial_linear_outflow" : 0.0,
+      "initial_nonlinear_outflow" : 0.0
+    },
+    {
+      "name" : "Clay",
+      "area" : 4100.0,
+      "potential_drying_constant": 100.0,
+      "gradient_drying_curve": 0.3,
+      "direct_percolation": 0.0,
+      "initial_upper_deficit" : 0.0,
+      "initial_lower_deficit" : 0.0,
+      "linear_storage_constant" : 2.0,
+      "nonlinear_storage_constant" : 2.0,
+      "initial_linear_outflow" : 0.0,
+      "initial_nonlinear_outflow" : 0.0
+    },
+    {
+      "name" : "Urban",
+      "area" : 600.0,
+      "potential_drying_constant": 0.0,
+      "gradient_drying_curve": 0.3,
+      "direct_percolation": 0.5,
+      "initial_upper_deficit" : 0.0,
+      "initial_lower_deficit" : 0.0,
+      "linear_storage_constant" : 0.5,
+      "nonlinear_storage_constant" : 0.25,
+      "initial_linear_outflow" : 0.0,
+      "initial_nonlinear_outflow" : 0.0
+    }
+  ]
+}

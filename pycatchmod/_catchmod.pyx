@@ -208,6 +208,7 @@ cdef class NonLinearStore:
 
 
 cdef class SubCatchment:
+    cdef public basestring name
     cdef SoilMoistureDeficitStore _soil
     cdef LinearStore _linear
     cdef NonLinearStore _nonlinear
@@ -216,6 +217,7 @@ cdef class SubCatchment:
     def __init__(self, area, double[:] initial_upper_deficit, double[:] initial_lower_deficit,
                  double[:] initial_linear_outflow, double[:] initial_nonlinear_outflow, **kwargs):
         self.area = area
+        self.name = kwargs.pop('name', '')
         self._soil = SoilMoistureDeficitStore(initial_upper_deficit, initial_lower_deficit, **kwargs)
         self._linear = LinearStore(initial_linear_outflow, **kwargs)
         self._nonlinear = NonLinearStore(initial_nonlinear_outflow, **kwargs)
@@ -229,10 +231,12 @@ cdef class SubCatchment:
 
 
 cdef class Catchment:
+    cdef public basestring name
     cdef list subcatchments
 
-    def __init__(self, subcatchments):
+    def __init__(self, subcatchments, name=''):
         self.subcatchments = list(subcatchments)
+        self.name = name
 
     cpdef int step(self, double[:] rainfall, double[:] pet, double[:, :] percolation, double[:, :] outflow):
         """ Step the catchment one timestep
