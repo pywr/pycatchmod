@@ -5,6 +5,11 @@ pycatchmod: A Cython implementation of the rainfall runoff model CATCHMOD (Wilby
 CATCHMOD is widely used rainfall runoff model in the United Kingdom. It was introduced by Wilby (1994). This
 version is developed in Python and utilises Cython to allow efficient execution of long time series.
 
+
+.. image:: https://travis-ci.org/jetuk/pycatchmod.svg?branch=master
+   :target: https://travis-ci.org/jetuk/pycatchmod
+
+
 ========
 Features
 ========
