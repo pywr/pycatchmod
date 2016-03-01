@@ -1,3 +1,5 @@
+from libc.math cimport cos, sqrt, M_PI
+
 import numpy as np
 cimport numpy as np
 
@@ -37,14 +39,14 @@ cdef class AnnualHarmonicModel:
     cpdef double value(self, double day_of_year):
         """ Evaluate the model for the given Julian day of the year.
         """
-        cdef double T = 365/(2*np.pi)
+        cdef double T = 365/(2*M_PI)
         cdef int j
         cdef double out
         cdef int M = self.amplitude.shape[0]
 
         out = self.mean
         for j in range(self.amplitude.shape[0]):
-            out += self.amplitude[j]*np.cos(day_of_year*(j+1)/T + self.phase[j])
+            out += self.amplitude[j]*cos(day_of_year*(j+1)/T + self.phase[j])
 
         return out
 
@@ -162,7 +164,7 @@ cdef class TemperatureSimulator:
         md = self.mean_dry.value(day_of_year)
         stdw = self.std_wet.value(day_of_year)
         stdd = self.std_dry.value(day_of_year)
-        b = np.sqrt(1 - self.autocorr1**2)
+        b = sqrt(1 - self.autocorr1**2)
         for i in range(N):
             # Calculate the random residual for this generation (including lag-1 correlation with previous state)
             x = self.autocorr1*self._state[i] + b*stats.norm.rvs(size=1)
