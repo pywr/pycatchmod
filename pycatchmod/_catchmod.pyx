@@ -115,20 +115,27 @@ cdef class LinearStore:
 
         self.linear_storage_constant = kwargs.pop('linear_storage_constant', 1.0)
         if self.linear_storage_constant < 0.0:
-            raise ValueError("Invalid value for linear storage constant. Must be > 0.0")
+            raise ValueError("Invalid value for linear storage constant. Must be >= 0.0")
 
     cpdef step(self, double[:] inflow, double[:] outflow):
         """
         """
-        cdef double b = np.exp(-1.0/self.linear_storage_constant)
+        cdef double b
+        try:
+            b = np.exp(-1.0/self.linear_storage_constant)
+        except ZeroDivisionError:
+            b = 0.0
         cdef int i
         cdef int n = self.previous_outflow.shape[0]
-
         for i in range(n):
             # Calculate outflow from this store as the average over the timestep
             outflow[i] = inflow[i] - self.linear_storage_constant*(inflow[i] - self.previous_outflow[i])*(1.0 - b)
             # Record the end of timestep flow ready for the next timestep
             self.previous_outflow[i] = inflow[i] - (inflow[i] - self.previous_outflow[i])*b
+
+    property size:
+        def __get__(self):
+            return self.previous_outflow.shape[0]
 
 
 cdef class NonLinearStore:
@@ -155,7 +162,6 @@ cdef class NonLinearStore:
         cdef double Q2
         cdef int i
         cdef int n = self.previous_outflow.shape[0]
-
         for i in range(n):
 
             if self.previous_outflow[i] > 0.0:
@@ -206,6 +212,9 @@ cdef class NonLinearStore:
             # Update previous outflow for next time-step
             self.previous_outflow[i] = Q2
 
+    property size:
+        def __get__(self):
+            return self.previous_outflow.shape[0]
 
 cdef class SubCatchment:
     cdef public basestring name
@@ -222,6 +231,9 @@ cdef class SubCatchment:
         self._linear = LinearStore(initial_linear_outflow, **kwargs)
         self._nonlinear = NonLinearStore(initial_nonlinear_outflow, **kwargs)
 
+        if self._linear.size != self._nonlinear.size:
+            raise ValueError('Initial conditions for linear and non-linear store are different sizes.')
+
     cpdef step(self, double[:] rainfall, double[:] pet, double[:] percolation, double[:] outflow):
         """ Step the subcatchment one timestep
         """
@@ -229,12 +241,18 @@ cdef class SubCatchment:
         self._linear.step(percolation, outflow)
         self._nonlinear.step(outflow, outflow)
 
+    property size:
+        def __get__(self):
+            return self._linear.size
 
 cdef class Catchment:
     cdef public basestring name
-    cdef list subcatchments
+    cdef public list subcatchments
 
     def __init__(self, subcatchments, name=''):
+        if not all(sc.size == subcatchments[0].size for sc in subcatchments):
+            raise ValueError('Subcatchments must all be the same size.')
+
         self.subcatchments = list(subcatchments)
         self.name = name
 
@@ -246,7 +264,9 @@ cdef class Catchment:
         for i, subcatchment in enumerate(self.subcatchments):
             subcatchment.step(rainfall, pet, percolation[i, :], outflow[i, :])
 
-
+    property size:
+        def __get__(self):
+            return self.subcatchments[0].size
 
 cpdef double declination(int day_of_year):
     """
