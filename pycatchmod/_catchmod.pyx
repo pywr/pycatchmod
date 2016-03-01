@@ -1,5 +1,4 @@
-import numpy as np
-cimport numpy as np
+from libc.math cimport exp, atan, tan, sin, acos, cos, fabs, sqrt, M_PI
 
 EPS = 1e-12
 
@@ -120,11 +119,13 @@ cdef class LinearStore:
     cpdef step(self, double[:] inflow, double[:] outflow):
         """
         """
+
         cdef double b
         try:
-            b = np.exp(-1.0/self.linear_storage_constant)
+            b = exp(-1.0/self.linear_storage_constant)
         except ZeroDivisionError:
             b = 0.0
+
         cdef int i
         cdef int n = self.previous_outflow.shape[0]
         for i in range(n):
@@ -167,29 +168,29 @@ cdef class NonLinearStore:
             if self.previous_outflow[i] > 0.0:
                 if inflow[i] < 0.0:
                     # Case (b)
-                    a = np.arctan(np.sqrt(-self.previous_outflow[i]/inflow[i])) - np.sqrt(-inflow[i]/self.nonlinear_storage_constant)
+                    a = atan(sqrt(-self.previous_outflow[i]/inflow[i])) - sqrt(-inflow[i]/self.nonlinear_storage_constant)
                     if a > 0.0:
-                        Q2 = -inflow[i]*np.tan(a)**2
+                        Q2 = -inflow[i]*tan(a)**2
                     else:
                         Q2 = 0.0
                 elif inflow[i] > 0.0:
                     # Case (c)
-                    a = np.sqrt(self.previous_outflow[i]) - np.sqrt(inflow[i])
-                    a /= np.sqrt(self.previous_outflow[i]) + np.sqrt(inflow[i])
+                    a = sqrt(self.previous_outflow[i]) - sqrt(inflow[i])
+                    a /= sqrt(self.previous_outflow[i]) + sqrt(inflow[i])
 
-                    b = -2.0*T*np.sqrt(inflow[i]/self.nonlinear_storage_constant)
+                    b = -2.0*T*sqrt(inflow[i]/self.nonlinear_storage_constant)
 
-                    Q2 = inflow[i]*(1 + a*np.exp(b))**2
-                    Q2 /= (1 - a*np.exp(b))**2
+                    Q2 = inflow[i]*(1 + a*exp(b))**2
+                    Q2 /= (1 - a*exp(b))**2
                 else:
                     # Case (a)  inflow[i] == 0.0
                     Q2 = self.nonlinear_storage_constant
-                    Q2 /= (np.sqrt(self.nonlinear_storage_constant/self.previous_outflow[i]) + T)**2
+                    Q2 /= (sqrt(self.nonlinear_storage_constant/self.previous_outflow[i]) + T)**2
             else:
                 # Case (d) - less than zero initial outflow
                 # Ensure the sqrt is done with a +ve number (or zero)
 
-                V = -np.sqrt(np.abs(self.previous_outflow[i])*self.nonlinear_storage_constant)
+                V = -sqrt(fabs(self.previous_outflow[i])*self.nonlinear_storage_constant)
                 V += inflow[i]*T
 
                 if V > 0.0:
@@ -199,10 +200,10 @@ cdef class NonLinearStore:
                     # Wilby (1994) is unclear what 'a' should be in case (d)
                     # Testing reveals it should be unity.
                     a = 1.0
-                    b = -2.0*(T - t)*np.sqrt(inflow[i]/self.nonlinear_storage_constant)
+                    b = -2.0*(T - t)*sqrt(inflow[i]/self.nonlinear_storage_constant)
 
-                    Q2 = inflow[i]*(1 - a*np.exp(b))**2
-                    Q2 /= (1 + a*np.exp(b))**2
+                    Q2 = inflow[i]*(1 - a*exp(b))**2
+                    Q2 /= (1 + a*exp(b))**2
                 else:
                     Q2 = 0.0
 
@@ -278,7 +279,7 @@ cpdef double declination(int day_of_year):
             Equation 1.6.1a
 
     """
-    return np.pi*(23.45/180.0) * np.sin(2*np.pi*(284 + day_of_year)/365)
+    return M_PI*(23.45/180.0) * sin(2*M_PI*(284 + day_of_year)/365)
 
 
 cpdef double sunset_hour_angle(double latitude, double declination):
@@ -288,7 +289,7 @@ cpdef double sunset_hour_angle(double latitude, double declination):
         Duffie & Beckman, Solar Engineering of Thermal Processes (Fourth Edition), 2013
             Equation 1.6.10
     """
-    return np.arccos(-np.tan(latitude)*np.tan(declination))
+    return acos(-tan(latitude)*tan(declination))
 
 
 cpdef double daily_extraterrestrial_radiation(int day_of_year, double latitude, double declination,
@@ -302,9 +303,9 @@ cpdef double daily_extraterrestrial_radiation(int day_of_year, double latitude, 
     """
     cdef double solar_constant = 1367  # W/m2
 
-    cdef double H = 24 * 3600 * solar_constant / np.pi
-    H *= 1 + 0.033*np.cos(2*np.pi*day_of_year/365)
-    H *= np.cos(latitude)*np.cos(declination)*np.sin(sunset_hour_angle) + sunset_hour_angle*np.sin(latitude)*np.sin(declination)
+    cdef double H = 24 * 3600 * solar_constant / M_PI
+    H *= 1 + 0.033*cos(2*M_PI*day_of_year/365)
+    H *= cos(latitude)*cos(declination)*sin(sunset_hour_angle) + sunset_hour_angle*sin(latitude)*sin(declination)
     return H/1e6  # Convert to MJ m-2 day-1
 
 

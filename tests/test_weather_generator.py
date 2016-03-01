@@ -47,7 +47,7 @@ def test_rainfall_simulator():
     Simple test RainfallSimulator to produce a step
 
     """
-    N = 1000
+    N = 10000
     wet_dry = AnnualHarmonicModel(0.4)  # 40% chance of wet if it was dry
     wet_wet = AnnualHarmonicModel(0.6)  # 60% chance of wet if it was wet
     intensity = AnnualHarmonicModel(1.0)
