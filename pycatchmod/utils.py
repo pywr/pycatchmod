@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from ._catchmod import Catchment, SubCatchment
+from ._catchmod import Catchment, SubCatchment, OudinCatchment
 
 
 def catchment_from_json(filename, n=1):
@@ -23,4 +23,10 @@ def catchment_from_json(filename, n=1):
             nonlinear_storage_constant=subdata['nonlinear_storage_constant']
         ))
 
-    return Catchment(subcatchments, name=data['name'])
+    klass = data.get('class', 'Catchment')
+    if klass == 'Catchment':
+        return Catchment(subcatchments, name=data['name'])
+    elif klass == 'OudinCatchment':
+        return OudinCatchment(subcatchments, name=data['name'], latitude=np.deg2rad(data['latitude']))
+    else:
+        raise ValueError("Catchment class ({}) not recognised.".format(klass))
