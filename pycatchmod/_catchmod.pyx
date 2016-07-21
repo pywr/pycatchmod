@@ -166,14 +166,14 @@ cdef class NonLinearStore:
         for i in range(n):
 
             if self.previous_outflow[i] > 0.0:
-                if inflow[i] < 0.0:
+                if inflow[i] < -1e-6:
                     # Case (b)
                     a = atan(sqrt(-self.previous_outflow[i]/inflow[i])) - sqrt(-inflow[i]/self.nonlinear_storage_constant)
                     if a > 0.0:
                         Q2 = -inflow[i]*tan(a)**2
                     else:
                         Q2 = 0.0
-                elif inflow[i] > 0.0:
+                elif inflow[i] > 1e-6:
                     # Case (c)
                     a = sqrt(self.previous_outflow[i]) - sqrt(inflow[i])
                     a /= sqrt(self.previous_outflow[i]) + sqrt(inflow[i])
@@ -235,21 +235,19 @@ cdef class SubCatchment:
         if self._linear.size != self._nonlinear.size:
             raise ValueError('Initial conditions for linear and non-linear store are different sizes.')
 
-    cpdef step(self, double[:] rainfall, double[:] pet, double[:] percolation, double[:] outflow):
+    cpdef int step(self, double[:] rainfall, double[:] pet, double[:] percolation, double[:] outflow) except -1:
         """ Step the subcatchment one timestep
         """
         self._soil.step(rainfall, pet, self.area, percolation)
         self._linear.step(percolation, outflow)
         self._nonlinear.step(outflow, outflow)
+        return 0
 
     property size:
         def __get__(self):
             return self._linear.size
 
 cdef class Catchment:
-    cdef public basestring name
-    cdef public list subcatchments
-
     def __init__(self, subcatchments, name=''):
         if not all(sc.size == subcatchments[0].size for sc in subcatchments):
             raise ValueError('Subcatchments must all be the same size.')
@@ -257,13 +255,15 @@ cdef class Catchment:
         self.subcatchments = list(subcatchments)
         self.name = name
 
-    cpdef int step(self, double[:] rainfall, double[:] pet, double[:, :] percolation, double[:, :] outflow):
+    cpdef int step(self, double[:] rainfall, double[:] pet, double[:, :] percolation, double[:, :] outflow) except -1:
         """ Step the catchment one timestep
         """
         cdef int i
         cdef SubCatchment subcatchment
         for i, subcatchment in enumerate(self.subcatchments):
             subcatchment.step(rainfall, pet, percolation[i, :], outflow[i, :])
+
+        return 0
 
     property size:
         def __get__(self):
@@ -345,14 +345,12 @@ cpdef pet_oudin(int day_of_year, double latitude, double[:] temperature, double[
 cdef class OudinCatchment:
     """
     """
-    cdef list subcatchments
-    cdef public double latitude
     def __init__(self, subcatchments, double latitude):
         self.latitude = latitude
         self.subcatchments = list(subcatchments)
 
     cpdef int step(self, int day_of_year, double[:] rainfall, double[:] temperature, double[:] pet,
-               double[:, :] percolation, double[:, :] outflow):
+               double[:, :] percolation, double[:, :] outflow) except -1:
         """ Step the catchment one timestep
 
         This method overloadds Catchment.step to pre-calculate PET
@@ -365,7 +363,11 @@ cdef class OudinCatchment:
         for i, subcatchment in enumerate(self.subcatchments):
             subcatchment.step(rainfall, pet, percolation[i, :], outflow[i, :])
 
+        return 0
 
+    property size:
+        def __get__(self):
+            return self.subcatchments[0].size
 
 
 
