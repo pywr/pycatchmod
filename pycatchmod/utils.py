@@ -8,10 +8,11 @@ def catchment_from_json(filename, n=1):
     with open(filename) as fh:
         data = json.load(fh)
 
+
     subcatchments = []
     for subdata in data['subcatchments']:
         subcatchments.append(SubCatchment(
-            3900.0,
+            subdata['area'],
             np.ones(n)*subdata['initial_upper_deficit'],
             np.ones(n)*subdata['initial_lower_deficit'],
             np.ones(n)*subdata['initial_linear_outflow'],

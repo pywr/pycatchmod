@@ -43,18 +43,21 @@ cdef class SoilMoistureDeficitStore:
         cdef double effective_rainfall, direct_percolation
 
         for i in range(n):
-            # First calculate direct percolation, this proportion bypasses the store entirely
-            direct_percolation = rainfall[i] * self.direct_percolation
-            percolation[i] = direct_percolation
+            percolation[i] = 0.0
 
-            # Effective rainfall = rainfall less PET and direct_percolation
-            effective_rainfall = rainfall[i] - pet[i] - direct_percolation
+            # Effective rainfall = rainfall less PET
+            effective_rainfall = rainfall[i] - pet[i]
 
             # The effective_rainfall variable is consumed (reduced) by the following processes to determine if there
             # is a net saturated percolation at the end.
 
             if effective_rainfall > 0.0:
                 # Wetting
+                # First calculate direct percolation, this proportion bypasses the store entirely
+                direct_percolation = effective_rainfall * self.direct_percolation
+                percolation[i] += direct_percolation
+                effective_rainfall -= direct_percolation
+
                 # Upper deficit replenishes first
                 if self.upper_deficit[i] > effective_rainfall:
                     # Upper deficit greater than the effective rainfall, reduce the deficit
@@ -98,9 +101,6 @@ cdef class SoilMoistureDeficitStore:
                     # there is no limit to the size of the lower store
                     self.lower_deficit[i] -= effective_rainfall * self.gradient_drying_curve
 
-            # Finally multiply by area to get volume rate
-            percolation[i] *= area
-
 cdef class LinearStore:
     # Current outflow of the store at the beginning of a time-step of the linear store
     cdef public double[:] previous_outflow
@@ -132,7 +132,10 @@ cdef class LinearStore:
             # Calculate outflow from this store as the average over the timestep
             outflow[i] = inflow[i] - self.linear_storage_constant*(inflow[i] - self.previous_outflow[i])*(1.0 - b)
             # Record the end of timestep flow ready for the next timestep
-            self.previous_outflow[i] = inflow[i] - (inflow[i] - self.previous_outflow[i])*b
+            if self.previous_outflow[i] < 1e-9:
+                self.previous_outflow[i] = 1e-8
+            else:
+                self.previous_outflow[i] = inflow[i] - (inflow[i] - self.previous_outflow[i])*b
 
     property size:
         def __get__(self):
@@ -160,28 +163,29 @@ cdef class NonLinearStore:
         cdef double a, b, V, t
         # TODO variable time-step
         cdef double T = 1.0
+        cdef double ZERO = 1e-9
         cdef double Q2
         cdef int i
         cdef int n = self.previous_outflow.shape[0]
         for i in range(n):
 
             if self.previous_outflow[i] > 0.0:
-                if inflow[i] < -1e-6:
+                if inflow[i] < -ZERO:
                     # Case (b)
-                    a = atan(sqrt(-self.previous_outflow[i]/inflow[i])) - sqrt(-inflow[i]/self.nonlinear_storage_constant)
+                    a = atan(sqrt(-self.previous_outflow[i]/inflow[i]))
+                    a -= sqrt(-inflow[i]/self.nonlinear_storage_constant)
                     if a > 0.0:
                         Q2 = -inflow[i]*tan(a)**2
                     else:
                         Q2 = 0.0
-                elif inflow[i] > 1e-6:
+                elif inflow[i] > ZERO:
                     # Case (c)
                     a = sqrt(self.previous_outflow[i]) - sqrt(inflow[i])
                     a /= sqrt(self.previous_outflow[i]) + sqrt(inflow[i])
 
                     b = -2.0*T*sqrt(inflow[i]/self.nonlinear_storage_constant)
 
-                    Q2 = inflow[i]*(1 + a*exp(b))**2
-                    Q2 /= (1 - a*exp(b))**2
+                    Q2 = inflow[i]*((1 + a*exp(b)) / (1 - a*exp(b)))**2
                 else:
                     # Case (a)  inflow[i] == 0.0
                     Q2 = self.nonlinear_storage_constant
@@ -202,8 +206,7 @@ cdef class NonLinearStore:
                     a = 1.0
                     b = -2.0*(T - t)*sqrt(inflow[i]/self.nonlinear_storage_constant)
 
-                    Q2 = inflow[i]*(1 - a*exp(b))**2
-                    Q2 /= (1 + a*exp(b))**2
+                    Q2 = inflow[i]*((1 - a*exp(b)) / (1 + a*exp(b)))**2
                 else:
                     Q2 = 0.0
 
@@ -238,14 +241,32 @@ cdef class SubCatchment:
     cpdef int step(self, double[:] rainfall, double[:] pet, double[:] percolation, double[:] outflow) except -1:
         """ Step the subcatchment one timestep
         """
+        cdef int i
+        cdef int n = self.size
+
         self._soil.step(rainfall, pet, self.area, percolation)
         self._linear.step(percolation, outflow)
+        for i in range(n):
+            outflow[i] *= self.area
+
         self._nonlinear.step(outflow, outflow)
         return 0
 
     property size:
         def __get__(self):
             return self._linear.size
+
+    property soil_store:
+        def __get__(self):
+            return self._soil
+
+    property linear_store:
+        def __get__(self):
+            return self._linear
+
+    property nonlinear_store:
+        def __get__(self):
+            return self._nonlinear
 
 cdef class Catchment:
     def __init__(self, subcatchments, name=''):

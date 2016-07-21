@@ -44,14 +44,14 @@ def test_linear_store():
         return I - V/Cr
 
     C = 0.5
-    store = LinearStore(np.zeros(1), linear_storage_constant=C)
+    store = LinearStore(np.ones(1), linear_storage_constant=C)
     I = np.array([10.0])
     O = np.empty_like(I)
     store.step(I, O)
     # Solve system numerical for the first time-step. We use 1000 timesteps in the numerical integration
     # to test against the analytical mean value for the timestep.
     t = np.linspace(0, 1.0, 1000.0)
-    V = odeint(dVdt, 0.0, t, args=(I, C))
+    V = odeint(dVdt, 1.0*C, t, args=(I, C))
     # Test mean outflow
     np.testing.assert_allclose(V.mean()/C, O, rtol=1e-3)
     # and end of time-step outflow.
@@ -145,10 +145,10 @@ def test_subcatchment():
 
     subcatchment.step(rainfall, pet, percolation, outflow)
     # Calculate actual percolation of r soil store with no deficit (i.e. initial conditions used above)
-    perc = 0.8*rainfall-pet
-    perc[perc < 0.0] = 0.0
-    perc += 0.2*rainfall
-    np.testing.assert_allclose(perc, percolation/area)
+    her = rainfall-pet
+    perc = np.zeros_like(her)
+    perc[her>0.0] = her[her>0.0]
+    np.testing.assert_allclose(perc, percolation)
 
     # TODO test outflow
     assert np.all(np.isfinite(outflow))
