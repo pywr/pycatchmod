@@ -154,8 +154,8 @@ cdef class NonLinearStore:
         self.previous_outflow = initial_outflow
 
         self.nonlinear_storage_constant = kwargs.pop('nonlinear_storage_constant', 1.0)
-        if self.nonlinear_storage_constant == 0.0:
-            raise ValueError("Invalid value for nonlinear storage constant. Must be > 0.0")
+        if self.nonlinear_storage_constant < 0.0:
+            raise ValueError("Invalid value for nonlinear storage constant. Must be >= 0.0")
 
     cpdef step(self, double[:] inflow, double[:] outflow):
         """
@@ -168,6 +168,9 @@ cdef class NonLinearStore:
         cdef int i
         cdef int n = self.previous_outflow.shape[0]
         for i in range(n):
+            if self.nonlinear_storage_constant < ZERO:
+                outflow[i] = inflow[i]
+                continue
 
             if self.previous_outflow[i] > 0.0:
                 if inflow[i] < -ZERO:
