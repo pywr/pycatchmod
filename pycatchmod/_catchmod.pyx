@@ -5,6 +5,8 @@ EPS = 1e-12
 cdef class SoilMoistureDeficitStore:
     # Current soil moisture deficit
     # Units: mm
+    cdef public double[:] initial_upper_deficit
+    cdef public double[:] initial_lower_deficit
     cdef public double[:] upper_deficit
     cdef public double[:] lower_deficit
 
@@ -22,12 +24,17 @@ cdef class SoilMoistureDeficitStore:
 
 
     def __init__(self, double[:] initial_upper_deficit, double[:] initial_lower_deficit, **kwargs):
-        self.upper_deficit = initial_upper_deficit
-        self.lower_deficit = initial_lower_deficit
+        self.initial_upper_deficit = initial_upper_deficit
+        self.initial_lower_deficit = initial_lower_deficit
+        self.reset()
 
         self.direct_percolation = kwargs.pop('direct_percolation', 0.0)
         self.potential_drying_constant = kwargs.pop('potential_drying_constant', 0.0)
         self.gradient_drying_curve = kwargs.pop('gradient_drying_curve', 1.0)
+
+    cpdef reset(self):
+        self.upper_deficit = self.initial_upper_deficit.copy()
+        self.lower_deficit = self.initial_lower_deficit.copy()
 
     cpdef step(self, double[:] rainfall, double[:] pet, double area, double[:] percolation):
         """
@@ -103,6 +110,7 @@ cdef class SoilMoistureDeficitStore:
 
 cdef class LinearStore:
     # Current outflow of the store at the beginning of a time-step of the linear store
+    cdef public double[:] initial_outflow
     cdef public double[:] previous_outflow
 
     # Represents temporary storage in the unsaturated zone
@@ -110,11 +118,15 @@ cdef class LinearStore:
     cdef public double linear_storage_constant
 
     def __init__(self, double[:] initial_outflow, **kwargs):
-        self.previous_outflow = initial_outflow
+        self.initial_outflow = initial_outflow
+        self.reset()
 
         self.linear_storage_constant = kwargs.pop('linear_storage_constant', 1.0)
         if self.linear_storage_constant < 0.0:
             raise ValueError("Invalid value for linear storage constant. Must be >= 0.0")
+
+    cpdef reset(self):
+        self.previous_outflow = self.initial_outflow.copy()
 
     cpdef step(self, double[:] inflow, double[:] outflow):
         """
@@ -144,6 +156,7 @@ cdef class LinearStore:
 
 cdef class NonLinearStore:
     # Current volume of the linear store
+    cdef public double[:] initial_outflow
     cdef public double[:] previous_outflow
 
     # Represents storage in the saturated zone/aquifer
@@ -151,11 +164,15 @@ cdef class NonLinearStore:
     cdef public double nonlinear_storage_constant
 
     def __init__(self, double[:] initial_outflow, **kwargs):
-        self.previous_outflow = initial_outflow
+        self.initial_outflow = initial_outflow
+        self.reset()
 
         self.nonlinear_storage_constant = kwargs.pop('nonlinear_storage_constant', 1.0)
         if self.nonlinear_storage_constant == 0.0:
             raise ValueError("Invalid value for nonlinear storage constant. Must be > 0.0")
+
+    cpdef reset(self):
+        self.previous_outflow = self.initial_outflow.copy()
 
     cpdef step(self, double[:] inflow, double[:] outflow):
         """
@@ -222,21 +239,26 @@ cdef class NonLinearStore:
 
 cdef class SubCatchment:
     cdef public basestring name
-    cdef SoilMoistureDeficitStore _soil
-    cdef LinearStore _linear
-    cdef NonLinearStore _nonlinear
+    cdef readonly SoilMoistureDeficitStore soil_store
+    cdef readonly LinearStore linear_store
+    cdef readonly NonLinearStore nonlinear_store
     cdef float area
 
     def __init__(self, area, double[:] initial_upper_deficit, double[:] initial_lower_deficit,
                  double[:] initial_linear_outflow, double[:] initial_nonlinear_outflow, **kwargs):
         self.area = area
         self.name = kwargs.pop('name', '')
-        self._soil = SoilMoistureDeficitStore(initial_upper_deficit, initial_lower_deficit, **kwargs)
-        self._linear = LinearStore(initial_linear_outflow, **kwargs)
-        self._nonlinear = NonLinearStore(initial_nonlinear_outflow, **kwargs)
+        self.soil_store = SoilMoistureDeficitStore(initial_upper_deficit, initial_lower_deficit, **kwargs)
+        self.linear_store = LinearStore(initial_linear_outflow, **kwargs)
+        self.nonlinear_store = NonLinearStore(initial_nonlinear_outflow, **kwargs)
 
-        if self._linear.size != self._nonlinear.size:
+        if self.linear_store.size != self.nonlinear_store.size:
             raise ValueError('Initial conditions for linear and non-linear store are different sizes.')
+
+    cpdef reset(self):
+        self.soil_store.reset()
+        self.linear_store.reset()
+        self.nonlinear_store.reset()
 
     cpdef int step(self, double[:] rainfall, double[:] pet, double[:] percolation, double[:] outflow) except -1:
         """ Step the subcatchment one timestep
@@ -244,29 +266,17 @@ cdef class SubCatchment:
         cdef int i
         cdef int n = self.size
 
-        self._soil.step(rainfall, pet, self.area, percolation)
-        self._linear.step(percolation, outflow)
+        self.soil_store.step(rainfall, pet, self.area, percolation)
+        self.linear_store.step(percolation, outflow)
         for i in range(n):
             outflow[i] *= self.area
 
-        self._nonlinear.step(outflow, outflow)
+        self.nonlinear_store.step(outflow, outflow)
         return 0
 
     property size:
         def __get__(self):
-            return self._linear.size
-
-    property soil_store:
-        def __get__(self):
-            return self._soil
-
-    property linear_store:
-        def __get__(self):
-            return self._linear
-
-    property nonlinear_store:
-        def __get__(self):
-            return self._nonlinear
+            return self.linear_store.size
 
 cdef class Catchment:
     def __init__(self, subcatchments, name=''):
@@ -275,6 +285,10 @@ cdef class Catchment:
 
         self.subcatchments = list(subcatchments)
         self.name = name
+
+    cpdef reset(self):
+        for subcatchment in self.subcatchments:
+            subcatchment.reset()
 
     cpdef int step(self, double[:] rainfall, double[:] pet, double[:, :] percolation, double[:, :] outflow) except -1:
         """ Step the catchment one timestep
@@ -389,6 +403,3 @@ cdef class OudinCatchment:
     property size:
         def __get__(self):
             return self.subcatchments[0].size
-
-
-
