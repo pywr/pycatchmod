@@ -36,7 +36,7 @@ cdef class SoilMoistureDeficitStore:
         self.upper_deficit = self.initial_upper_deficit.copy()
         self.lower_deficit = self.initial_lower_deficit.copy()
 
-    cpdef step(self, double[:] rainfall, double[:] pet, double area, double[:] percolation):
+    cpdef step(self, double[:] rainfall, double[:] pet, double[:] percolation):
         """
         Step the soil moisture store one day.
 
@@ -266,7 +266,7 @@ cdef class SubCatchment:
         cdef int i
         cdef int n = self.size
 
-        self.soil_store.step(rainfall, pet, self.area, percolation)
+        self.soil_store.step(rainfall, pet, percolation)
         self.linear_store.step(percolation, outflow)
         for i in range(n):
             outflow[i] *= self.area
