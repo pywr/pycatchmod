@@ -242,7 +242,7 @@ cdef class SubCatchment:
     cdef readonly SoilMoistureDeficitStore soil_store
     cdef readonly LinearStore linear_store
     cdef readonly NonLinearStore nonlinear_store
-    cdef float area
+    cdef public float area
 
     def __init__(self, area, double[:] initial_upper_deficit, double[:] initial_lower_deficit,
                  double[:] initial_linear_outflow, double[:] initial_nonlinear_outflow, **kwargs):
