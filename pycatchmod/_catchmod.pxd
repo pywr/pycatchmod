@@ -10,6 +10,7 @@ cdef class Catchment:
 cdef class OudinCatchment:
     """
     """
+    cdef public basestring name
     cdef list subcatchments
     cdef public double latitude
 

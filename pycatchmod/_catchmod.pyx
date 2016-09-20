@@ -366,9 +366,10 @@ cpdef pet_oudin(int day_of_year, double latitude, double[:] temperature, double[
 cdef class OudinCatchment:
     """
     """
-    def __init__(self, subcatchments, double latitude):
+    def __init__(self, subcatchments, double latitude, name=''):
         self.latitude = latitude
         self.subcatchments = list(subcatchments)
+        self.name = name
 
     cpdef int step(self, int day_of_year, double[:] rainfall, double[:] temperature, double[:] pet,
                double[:, :] percolation, double[:, :] outflow) except -1:
