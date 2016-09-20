@@ -4,6 +4,7 @@ cdef class Catchment:
     cdef public basestring name
     cdef public list subcatchments
 
+    cpdef reset(self)
     cpdef int step(self, double[:] rainfall, double[:] pet, double[:, :] percolation, double[:, :] outflow) except -1
 
 

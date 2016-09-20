@@ -20,7 +20,7 @@ def test_smd_store():
     pet = np.array([2.0])
     percolation = np.empty_like(rainfall)
 
-    SMD.step(rainfall, pet, area, percolation)
+    SMD.step(rainfall, pet, percolation)
 
     # There is currently no deficit so all effective rainfall is runoff
     np.testing.assert_allclose(percolation, rainfall-pet)
