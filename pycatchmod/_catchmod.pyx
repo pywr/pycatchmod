@@ -122,7 +122,7 @@ cdef class LinearStore:
         self.reset()
 
         self.linear_storage_constant = kwargs.pop('linear_storage_constant', 1.0)
-        if self.linear_storage_constant < 0.0:
+        if self.linear_storage_constant <= EPS:
             raise ValueError("Invalid value for linear storage constant. Must be >= 0.0")
 
     cpdef reset(self):
@@ -249,10 +249,23 @@ cdef class SubCatchment:
         self.area = area
         self.name = kwargs.pop('name', '')
         self.soil_store = SoilMoistureDeficitStore(initial_upper_deficit, initial_lower_deficit, **kwargs)
-        self.linear_store = LinearStore(initial_linear_outflow, **kwargs)
+
+        linear_storage_constant = kwargs.pop('linear_storage_constant', None)
+        # Check for a small linear storage coefficient.
+        if linear_storage_constant is not None:
+            if linear_storage_constant < EPS:
+                import warnings
+                warnings.warn('Small or zero linear_storage_constant is invalid. Assuming no linear store.')
+                linear_storage_constant = None
+
+        if linear_storage_constant is not None:
+            self.linear_store = LinearStore(initial_linear_outflow,
+                                            linear_storage_constant=linear_storage_constant,
+                                            **kwargs)
+        else:
+            self.linear_store = None
 
         nonlinear_storage_constant = kwargs.pop('nonlinear_storage_constant', None)
-
         # Check for a small non-linear storage coefficient.
         if nonlinear_storage_constant is not None:
             if nonlinear_storage_constant < EPS:
@@ -264,11 +277,8 @@ cdef class SubCatchment:
             self.nonlinear_store = NonLinearStore(initial_nonlinear_outflow,
                                                   nonlinear_storage_constant=nonlinear_storage_constant,
                                                   **kwargs)
-            if self.linear_store.size != self.nonlinear_store.size:
-                raise ValueError('Initial conditions for linear and non-linear store are different sizes.')
         else:
             self.nonlinear_store = None
-
 
 
     cpdef reset(self):
@@ -283,7 +293,14 @@ cdef class SubCatchment:
         cdef int n = self.size
 
         self.soil_store.step(rainfall, pet, percolation)
-        self.linear_store.step(percolation, outflow)
+
+        if self.linear_store is not None:
+            self.linear_store.step(percolation, outflow)
+        else:
+            # if there is no linear storage percolation becomes outflow
+            for i in range(n):
+                outflow[i] = percolation[i]
+
         for i in range(n):
             outflow[i] *= self.area
 

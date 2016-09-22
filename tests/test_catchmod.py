@@ -128,6 +128,27 @@ def test_nonlinear_store():
     np.testing.assert_allclose(V[-1]**2/C, np.array(store.previous_outflow), rtol=1e-3, atol=1e-10)
 
 
+def test_subcatchment_no_linear():
+    """
+    Test SubCatchment initialiser correctly catches invalid or no nonlinear_storage_constants
+    """
+    n = 10
+    area = 100.0
+
+    subcatchment = SubCatchment(area, np.zeros(n), np.zeros(n), np.zeros(n), np.zeros(n),
+                                direct_percolation=0.2, potential_drying_constant=100, gradient_drying_curve=0.3,
+                                linear_storage_constant=None, nonlinear_storage_constant=10.0)
+
+    assert subcatchment.linear_store is None
+
+    # Warning should be raised if a small or zero non-linear constant is given.
+    with pytest.warns(UserWarning):
+        subcatchment = SubCatchment(area, np.zeros(n), np.zeros(n), np.zeros(n), np.zeros(n),
+                            direct_percolation=0.2, potential_drying_constant=100, gradient_drying_curve=0.3,
+                            linear_storage_constant=0.0, nonlinear_storage_constant=10.0)
+
+        assert subcatchment.linear_store is None
+
 def test_subcatchment_no_nonlinear():
     """
     Test SubCatchment initialiser correctly catches invalid or no nonlinear_storage_constants
