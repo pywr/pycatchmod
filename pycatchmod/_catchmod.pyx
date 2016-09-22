@@ -168,7 +168,7 @@ cdef class NonLinearStore:
         self.reset()
 
         self.nonlinear_storage_constant = kwargs.pop('nonlinear_storage_constant', 1.0)
-        if self.nonlinear_storage_constant == 0.0:
+        if self.nonlinear_storage_constant <= EPS:
             raise ValueError("Invalid value for nonlinear storage constant. Must be > 0.0")
 
     cpdef reset(self):
@@ -250,10 +250,26 @@ cdef class SubCatchment:
         self.name = kwargs.pop('name', '')
         self.soil_store = SoilMoistureDeficitStore(initial_upper_deficit, initial_lower_deficit, **kwargs)
         self.linear_store = LinearStore(initial_linear_outflow, **kwargs)
-        self.nonlinear_store = NonLinearStore(initial_nonlinear_outflow, **kwargs)
 
-        if self.linear_store.size != self.nonlinear_store.size:
-            raise ValueError('Initial conditions for linear and non-linear store are different sizes.')
+        nonlinear_storage_constant = kwargs.pop('nonlinear_storage_constant', None)
+
+        # Check for a small non-linear storage coefficient.
+        if nonlinear_storage_constant is not None:
+            if nonlinear_storage_constant < EPS:
+                import warnings
+                warnings.warn('Small or zero nonlinear_storage_constant is invalid. Assuming no non-linear store.')
+                nonlinear_storage_constant = None
+
+        if nonlinear_storage_constant is not None:
+            self.nonlinear_store = NonLinearStore(initial_nonlinear_outflow,
+                                                  nonlinear_storage_constant=nonlinear_storage_constant,
+                                                  **kwargs)
+            if self.linear_store.size != self.nonlinear_store.size:
+                raise ValueError('Initial conditions for linear and non-linear store are different sizes.')
+        else:
+            self.nonlinear_store = None
+
+
 
     cpdef reset(self):
         self.soil_store.reset()
@@ -271,7 +287,8 @@ cdef class SubCatchment:
         for i in range(n):
             outflow[i] *= self.area
 
-        self.nonlinear_store.step(outflow, outflow)
+        if self.nonlinear_store is not None:
+            self.nonlinear_store.step(outflow, outflow)
         return 0
 
     property size:
