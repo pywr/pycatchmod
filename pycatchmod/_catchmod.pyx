@@ -122,7 +122,7 @@ cdef class LinearStore:
         self.reset()
 
         self.linear_storage_constant = kwargs.pop('linear_storage_constant', 1.0)
-        if self.linear_storage_constant < 0.0:
+        if self.linear_storage_constant <= EPS:
             raise ValueError("Invalid value for linear storage constant. Must be >= 0.0")
 
     cpdef reset(self):
@@ -168,7 +168,7 @@ cdef class NonLinearStore:
         self.reset()
 
         self.nonlinear_storage_constant = kwargs.pop('nonlinear_storage_constant', 1.0)
-        if self.nonlinear_storage_constant == 0.0:
+        if self.nonlinear_storage_constant <= EPS:
             raise ValueError("Invalid value for nonlinear storage constant. Must be > 0.0")
 
     cpdef reset(self):
@@ -249,16 +249,44 @@ cdef class SubCatchment:
         self.area = area
         self.name = kwargs.pop('name', '')
         self.soil_store = SoilMoistureDeficitStore(initial_upper_deficit, initial_lower_deficit, **kwargs)
-        self.linear_store = LinearStore(initial_linear_outflow, **kwargs)
-        self.nonlinear_store = NonLinearStore(initial_nonlinear_outflow, **kwargs)
 
-        if self.linear_store.size != self.nonlinear_store.size:
-            raise ValueError('Initial conditions for linear and non-linear store are different sizes.')
+        linear_storage_constant = kwargs.pop('linear_storage_constant', None)
+        # Check for a small linear storage coefficient.
+        if linear_storage_constant is not None:
+            if linear_storage_constant < EPS:
+                import warnings
+                warnings.warn('Small or zero linear_storage_constant is invalid. Assuming no linear store.')
+                linear_storage_constant = None
+
+        if linear_storage_constant is not None:
+            self.linear_store = LinearStore(initial_linear_outflow,
+                                            linear_storage_constant=linear_storage_constant,
+                                            **kwargs)
+        else:
+            self.linear_store = None
+
+        nonlinear_storage_constant = kwargs.pop('nonlinear_storage_constant', None)
+        # Check for a small non-linear storage coefficient.
+        if nonlinear_storage_constant is not None:
+            if nonlinear_storage_constant < EPS:
+                import warnings
+                warnings.warn('Small or zero nonlinear_storage_constant is invalid. Assuming no non-linear store.')
+                nonlinear_storage_constant = None
+
+        if nonlinear_storage_constant is not None:
+            self.nonlinear_store = NonLinearStore(initial_nonlinear_outflow,
+                                                  nonlinear_storage_constant=nonlinear_storage_constant,
+                                                  **kwargs)
+        else:
+            self.nonlinear_store = None
+
 
     cpdef reset(self):
         self.soil_store.reset()
-        self.linear_store.reset()
-        self.nonlinear_store.reset()
+        if self.linear_store is not None:
+            self.linear_store.reset()
+        if self.nonlinear_store is not None:
+            self.nonlinear_store.reset()
 
     cpdef int step(self, double[:] rainfall, double[:] pet, double[:] percolation, double[:] outflow) except -1:
         """ Step the subcatchment one timestep
@@ -267,16 +295,27 @@ cdef class SubCatchment:
         cdef int n = self.size
 
         self.soil_store.step(rainfall, pet, percolation)
-        self.linear_store.step(percolation, outflow)
+
+        if self.linear_store is not None:
+            self.linear_store.step(percolation, outflow)
+        else:
+            # if there is no linear storage percolation becomes outflow
+            for i in range(n):
+                outflow[i] = percolation[i]
+
         for i in range(n):
             outflow[i] *= self.area
 
-        self.nonlinear_store.step(outflow, outflow)
+        if self.nonlinear_store is not None:
+            self.nonlinear_store.step(outflow, outflow)
         return 0
 
     property size:
         def __get__(self):
-            return self.linear_store.size
+            if self.linear_store is not None:
+                return self.linear_store.size
+            else:
+                return self.nonlinear_store.size
 
 cdef class Catchment:
     def __init__(self, subcatchments, name=''):
