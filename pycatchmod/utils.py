@@ -1,13 +1,21 @@
 import json
 import numpy as np
 from ._catchmod import Catchment, SubCatchment, OudinCatchment
-
+from past.builtins import basestring
 
 def catchment_from_json(filename, n=1):
-
-    with open(filename) as fh:
-        data = json.load(fh)
-
+    if isinstance(filename, dict):
+        # argument is already a python dictionary
+        data = filename
+    elif isinstance(filename, basestring):
+        # argument is a filename
+        with open(filename) as fh:
+            data = json.load(fh)
+    elif hasattr(filename, "read"):
+        # argument is file-like
+        data = json.load(filename.read())
+    else:
+        raise TypeError("Unexpected input type: \"{}\"".format(filename.__class__.__name__))
 
     subcatchments = []
     for subdata in data['subcatchments']:
