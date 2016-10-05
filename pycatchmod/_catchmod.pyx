@@ -283,8 +283,10 @@ cdef class SubCatchment:
 
     cpdef reset(self):
         self.soil_store.reset()
-        self.linear_store.reset()
-        self.nonlinear_store.reset()
+        if self.linear_store is not None:
+            self.linear_store.reset()
+        if self.nonlinear_store is not None:
+            self.nonlinear_store.reset()
 
     cpdef int step(self, double[:] rainfall, double[:] pet, double[:] percolation, double[:] outflow) except -1:
         """ Step the subcatchment one timestep
@@ -310,7 +312,10 @@ cdef class SubCatchment:
 
     property size:
         def __get__(self):
-            return self.linear_store.size
+            if self.linear_store is not None:
+                return self.linear_store.size
+            else:
+                return self.nonlinear_store.size
 
 cdef class Catchment:
     def __init__(self, subcatchments, name=''):
