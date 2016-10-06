@@ -108,6 +108,10 @@ cdef class SoilMoistureDeficitStore:
                     # there is no limit to the size of the lower store
                     self.lower_deficit[i] -= effective_rainfall * self.gradient_drying_curve
 
+    property size:
+        def __get__(self):
+            return self.initial_upper_deficit.shape[0]
+
 cdef class LinearStore:
     # Current outflow of the store at the beginning of a time-step of the linear store
     cdef public double[:] initial_outflow
@@ -314,8 +318,10 @@ cdef class SubCatchment:
         def __get__(self):
             if self.linear_store is not None:
                 return self.linear_store.size
-            else:
+            elif self.nonlinear_store is not None:
                 return self.nonlinear_store.size
+            else:
+                return self.soil_store.size
 
 cdef class Catchment:
     def __init__(self, subcatchments, name=''):
