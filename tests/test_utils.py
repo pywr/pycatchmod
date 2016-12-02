@@ -2,7 +2,7 @@
 Test pycatchmod.utils module
 
 """
-import pycatchmod.utils
+from pycatchmod.io.json import catchment_from_json
 import pytest
 import os
 
@@ -17,7 +17,7 @@ def thames_json(data_dir):
     return os.path.join(data_dir, 'thames.json')
 
 def test_json(thames_json):
-
-    catchment = pycatchmod.utils.catchment_from_json(thames_json)
-
-    assert catchment.name == 'Thames'
+    catchment = catchment_from_json(thames_json)
+    assert(catchment.name == 'Thames')
+    assert(len(catchment.subcatchments) == 3)
+    assert(catchment.subcatchments[0].area == 3900.0)
