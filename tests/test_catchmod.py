@@ -1,6 +1,10 @@
-from pycatchmod import SoilMoistureDeficitStore, LinearStore, NonLinearStore, SubCatchment, Catchment
+from pycatchmod import (SoilMoistureDeficitStore, LinearStore, NonLinearStore,
+    SubCatchment, Catchment, run_catchmod)
+from pycatchmod.io.json import catchment_from_json
 import numpy as np
 import pytest
+import os
+import pandas
 
 
 def test_smd_store():
@@ -226,3 +230,18 @@ def test_catchment():
     catchment.step(rainfall, pet, percolation, outflow)
     # TODO test outflow
     assert np.all(np.isfinite(outflow))
+
+@pytest.mark.parametrize("leap", [True, False])
+def test_run_catchmod(leap):
+    shape = [200, 3]
+    catchment = catchment_from_json(os.path.join(os.path.dirname(__file__), "data", "thames.json"), n=shape[1])
+    dates = pandas.date_range("1920-01-01", periods=200, freq="D")
+    if leap:
+        # remove input data for leap days
+        num_leap = sum([1 for date in dates if (date.month == 2 and date.day == 29)])
+        shape[0] -= num_leap
+    rainfall = np.ones(shape)
+    pet = np.zeros(shape)
+    flow = run_catchmod(catchment, rainfall, pet, dates)
+    assert(flow.shape[0] == len(dates))
+    assert(flow.shape[1] == rainfall.shape[1])

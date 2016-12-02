@@ -26,6 +26,8 @@ def run_catchmod(C, rainfall, pet, dates=None):
     else:
         M2 = M
 
+    print(M, M2)
+
     perc = np.zeros((len(C.subcatchments), N))
     outflow = np.zeros_like(perc)
     total_outflow = np.zeros(M)
@@ -39,7 +41,8 @@ def run_catchmod(C, rainfall, pet, dates=None):
         if M != M2:
             date = dates[j]
             if date.month == 2 and date.day == 29:
-                i -= 1 # use yesterday's rainfall and pet
+                # input data is missing leap days, use previous day
+                i -= 1
 
         r = rainfall[i, ...].reshape(N).astype(np.float64)
         p = pet[i, ...].reshape(N).astype(np.float64)
