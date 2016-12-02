@@ -1,4 +1,6 @@
+from __future__ import absolute_import
 import json
+
 import numpy as np
 from .._catchmod import Catchment, SubCatchment, OudinCatchment
 from past.builtins import basestring
