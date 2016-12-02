@@ -1,6 +1,7 @@
 from setuptools import setup, Extension
 from Cython.Distutils import build_ext
 import numpy
+import os
 
 catchmod = Extension('pycatchmod._catchmod', ['pycatchmod/_catchmod.pyx'],
                      include_dirs=[numpy.get_include()])
