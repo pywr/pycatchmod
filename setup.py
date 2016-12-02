@@ -21,7 +21,7 @@ setup(
     author='James E Tomlinson',
     author_email='tomo.bbe@gmail.com',
     packages=['pycatchmod', "pycatchmod.io"],
-    install_requires=['cython', 'numpy', 'pandas', 'click'],
+    install_requires=['cython', 'numpy', 'pandas', 'click', 'tables'],
     setup_requires=['cython', 'numpy'],
     tests_require=['pytest'],
     ext_modules=[catchmod, weather_generator],
