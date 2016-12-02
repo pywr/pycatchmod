@@ -80,7 +80,7 @@ def run(ctx, parameters, rainfall, pet, output):
 
 @cli.command()
 def version():
-    print("pycatchmod", pycatchmod.__version__)
+    print("pycatchmod {}".format(pycatchmod.__version__))
 
 if __name__ == "__main__":
     main()
