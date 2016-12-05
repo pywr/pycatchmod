@@ -122,6 +122,7 @@ def read_results(wb):
         year, month, day, hour, minute, second = xlrd.xldate_as_tuple(date_num, datemode)
         date = np.datetime64("{:04d}-{:02d}-{:02d}".format(year, month, day))
         dates[n] = date
+        recharge[n] = sh.cell(row, 2).value
         smd_upper[n] = sh.cell(row, 3).value
         smd_lower[n] = sh.cell(row, 4).value
         flow_sim[n] = sh.cell(row, 5).value
