@@ -47,6 +47,7 @@ def run(ctx, parameters, rainfall, pet, output):
     import pandas
     import numpy as np
     from pycatchmod.io.json import catchment_from_json
+    from pycatchmod.io.excel import excel_parameter_adjustment
     from pycatchmod import run_catchmod
 
     # load rainfall and pet data
@@ -56,6 +57,7 @@ def run(ctx, parameters, rainfall, pet, output):
 
     # load catchmod model
     catchment = catchment_from_json(parameters, n=num_scenarios)
+    excel_parameter_adjustment(catchment)
 
     idx0 = rainfall.index[0]
     idxN = rainfall.index[-1]
