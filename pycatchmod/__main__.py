@@ -65,7 +65,7 @@ def run(ctx, parameters, rainfall, pet, output):
     flows = run_catchmod(catchment, rainfall.values, pet.values, dates=dates)
     print("Shape", flows.shape)
 
-    df = pandas.DataFrame(flows, index=rainfall.index)
+    df = pandas.DataFrame(flows, index=dates)
     df.index.name = "Date"
 
     # write output

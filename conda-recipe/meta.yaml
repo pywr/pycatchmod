@@ -1,0 +1,42 @@
+package:
+  name: pycatchmod
+  version: "0.1"
+
+source:
+  path: ../
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - cython
+    - numpy
+
+    # not actually required, but setuptools trys to pull them in otherwise
+    - pandas
+    - pytables
+    - click
+    - xlrd
+
+  run:
+    - python
+    - numpy
+    - pandas
+    - pytables
+    - click
+    - xlrd
+
+test:
+  imports:
+    - pycatchmod
+    - pycatchmod._catchmod
+  commands:
+    - pycatchmod version
+
+about:
+  home: https://github.com/jetuk/pycatchmod
+  license: GPL v3
+  summary: "A Cython implementation of the rainfall runoff model CATCHMOD (Wilby, 1994)"
