@@ -1,5 +1,6 @@
 import xlrd
 import numpy as np
+import warnings
 
 def open_workbook(filename):
     wb = xlrd.open_workbook(filename, on_demand=True)
@@ -180,7 +181,10 @@ def compare(filename, plot=True):
     wb = open_workbook(filename)
     name, subcatchments = read_parameters(wb)
     results = read_results(wb)
-    catchment = catchment_from_json({"name": name, "subcatchments": subcatchments})
+    catchment = catchment_from_json({"name": name, "subcatchments": subcatchments, "legacy": True})
+
+    print("Loaded {} subcatchments".format(len(subcatchments)))
+    print("Loaded {} timesteps of results".format(len(results["rainfall"])))
 
     rainfall = results['rainfall']
     pet = results['pet']
@@ -211,7 +215,9 @@ def compare(filename, plot=True):
         # create figure
         fig, axarr = plt.subplots(2, 1, sharex=True)
         df.loc[:, ("Rainfall", "PET")].plot(ax=axarr[0])
-        df.loc[:, ("Excel", "Python")].plot(style=".-", ax=axarr[1])
+        df.loc[:, "Excel"].plot(style=".-b", ax=axarr[1])
+        df.loc[:, "Python"].plot(style=".-g", ax=axarr[1])
+        plt.legend(["Excel", "Python"])
         axarr[1].grid(True)
 
         plt.show()

@@ -18,7 +18,7 @@ def dump(ctx, filename):
     from json import dumps
     wb = open_workbook(filename)
     name, parameters = read_parameters(wb)
-    print(dumps({"name": name, "subcatchments": parameters}, indent=4, sort_keys=True))
+    print(dumps({"name": name, "subcatchments": parameters, "legacy": True}, indent=4, sort_keys=True))
 
 @cli.command()
 @click.option("--filename", type=str, required=True)
