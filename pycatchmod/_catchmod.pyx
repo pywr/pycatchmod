@@ -1,4 +1,5 @@
 from libc.math cimport exp, atan, tan, sin, acos, cos, fabs, sqrt, M_PI
+import warnings
 
 EPS = 1e-12
 
@@ -238,7 +239,7 @@ cdef class NonLinearStore:
 
             # Wilby 1994 gives no analytical solution to the mean flow in a timestep, therefore set the outflow
             # for this timestep as the average of the outflow at beginning and end of timestep
-            outflow[i] = (self.previous_outflow[i]+Q2)/2.0
+            outflow[i] = (self.previous_outflow[i] + Q2) / 2.0
             # Update previous outflow for next time-step
             self.previous_outflow[i] = Q2
 
@@ -246,12 +247,35 @@ cdef class NonLinearStore:
         def __get__(self):
             return self.previous_outflow.shape[0]
 
+cdef class LegacyNonLinearStore(NonLinearStore):
+    def __init__(self, double[:] initial_outflow, **kwargs):
+        """
+        The Excel version of catchmod has an unusually (probably buggy)
+        behaviour for subcatchments without a nonlinear storage (i.e. the
+        nonlinear storage coefficient is set to zero). This class replicates
+        that behaviour for consistency with models that have been calibrated
+        with this "feature".
+        """
+        self.initial_outflow = initial_outflow
+        self.reset()
+
+    cpdef step(self, double[:] inflow, double[:] outflow):
+        cdef int i
+        cdef int n = self.previous_outflow.shape[0]
+        cdef double Qin
+        for i in range(n):
+            Qin = inflow[i] # require when inflow=outflow
+            outflow[i] = (self.previous_outflow[i] + Qin) / 2.0
+            self.previous_outflow[i] = Qin
+
+
 cdef class SubCatchment:
     cdef public basestring name
     cdef readonly SoilMoistureDeficitStore soil_store
     cdef readonly LinearStore linear_store
     cdef readonly NonLinearStore nonlinear_store
     cdef public float area
+    cdef readonly bint legacy
 
     def __init__(self, area, double[:] initial_upper_deficit, double[:] initial_lower_deficit,
                  double[:] initial_linear_outflow, double[:] initial_nonlinear_outflow, **kwargs):
@@ -263,7 +287,6 @@ cdef class SubCatchment:
         # Check for a small linear storage coefficient.
         if linear_storage_constant is not None:
             if linear_storage_constant < EPS:
-                import warnings
                 warnings.warn('Small or zero linear_storage_constant is invalid. Assuming no linear store.')
                 linear_storage_constant = None
 
@@ -274,11 +297,12 @@ cdef class SubCatchment:
         else:
             self.linear_store = None
 
+        self.legacy = kwargs.pop("legacy", False)
+
         nonlinear_storage_constant = kwargs.pop('nonlinear_storage_constant', None)
         # Check for a small non-linear storage coefficient.
         if nonlinear_storage_constant is not None:
             if nonlinear_storage_constant < EPS:
-                import warnings
                 warnings.warn('Small or zero nonlinear_storage_constant is invalid. Assuming no non-linear store.')
                 nonlinear_storage_constant = None
 
@@ -287,7 +311,11 @@ cdef class SubCatchment:
                                                   nonlinear_storage_constant=nonlinear_storage_constant,
                                                   **kwargs)
         else:
-            self.nonlinear_store = None
+            if self.legacy:
+                warnings.warn('Using legacy mode for nonlinear store with zero coefficient')
+                self.nonlinear_store = LegacyNonLinearStore(initial_nonlinear_outflow)
+            else:
+                self.nonlinear_store = None
 
 
     cpdef reset(self):
