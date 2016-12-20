@@ -250,7 +250,7 @@ cdef class NonLinearStore:
 cdef class LegacyNonLinearStore(NonLinearStore):
     def __init__(self, double[:] initial_outflow, **kwargs):
         """
-        The Excel version of catchmod has an unusually (probably buggy)
+        The Excel version of catchmod has an unusual (probably buggy)
         behaviour for subcatchments without a nonlinear storage (i.e. the
         nonlinear storage coefficient is set to zero). This class replicates
         that behaviour for consistency with models that have been calibrated
