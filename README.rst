@@ -28,48 +28,56 @@ Installation
 
 The module is primarily written in Cython and will need a C compiler installed to build. The code has been tested successfully with GCC (Linux), MSVC (Windows) and clang (OS X).
 
-To install, use `setup.py` as you normally would:
+To install, use :code:`setup.py` as you normally would:
 
 .. code-block:: console
+
     python setup.py install
 
-Once installed, tests can be run using the `py.test` command:
+Once installed, tests can be run using the :code:`py.test` command:
 
 .. code-block:: console
+
     py.test tests
 
 ======================
 Command line interface
 ======================
 
-A command line interface has been written for convenience. This is installed as the `pycatchmod` command. See:
+A command line interface has been written for convenience. This is installed as the :code:`pycatchmod` command. See:
 
 .. code-block:: console
+
     pycatchmod --help
 
-You can access the help for each of the sub-commands using the `--help` switch, e.g.:
+You can access the help for each of the sub-commands using the :code:`--help` switch, e.g.:
 
 .. code-block:: console
+
     pycatchmod run --help
 
-To run a model, use the `run` sub-command:
+To run a model, use the :code:`run` sub-command:
 
 .. code-block:: console
+
     pycatchmod run --parameters thames.json --rainfall thames_rainfall.csv --pet thames_pet.csv --output thames_flow.csv
 
-The command line interface also provides some tools for working with the Excel implementation of CATCHMOD. The parameters from a model can be extracted from an Excel file using `dump` e.g.:
+The command line interface also provides some tools for working with the Excel implementation of CATCHMOD. The parameters from a model can be extracted from an Excel file using :code:`dump` e.g.:
 
 .. code-block:: console
+
     pycatchmod dump --filename thames.xls
 
-The parameters are printed in JSON format to the standard output (STDOUT). An example of this format can be found in the `tests` directory. This data can be redirected into a file using a pipe:
+The parameters are printed in JSON format to the standard output (STDOUT). An example of this format can be found in the :code:`tests` directory. This data can be redirected into a file using a pipe:
 
 .. code-block:: console
+
     pycatchmod dump --filename thames.xls > thames.json
 
-You can use the `compare` command to compare the results of pycatchmod and an Excel model. Any (significant) differences between the outputs is considered a bug (and should be reported via GitHub).
+You can use the :code:`compare` command to compare the results of pycatchmod and an Excel model. Any (significant) differences between the outputs is considered a bug (and should be reported via GitHub).
 
 .. code-block:: console
+
     pycatchmod compare --filename thames.xls --plot
 
 =======
