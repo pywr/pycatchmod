@@ -11,7 +11,7 @@ def main():
     cli(obj={})
 
 @cli.command()
-@click.option("--filename", type=str, required=True)
+@click.option("--filename", type=click.Path(exists=True), required=True)
 @click.pass_context
 def dump(ctx, filename):
     from pycatchmod.io.excel import open_workbook, read_parameters
@@ -21,7 +21,7 @@ def dump(ctx, filename):
     print(dumps({"name": name, "subcatchments": parameters, "legacy": True}, indent=4, sort_keys=True))
 
 @cli.command()
-@click.option("--filename", type=str, required=True)
+@click.option("--filename", type=click.Path(exists=True), required=True)
 @click.option("--plot", default=False, is_flag=True)
 @click.pass_context
 def compare(ctx, filename, plot):
@@ -38,10 +38,10 @@ def pandas_read(filename):
     return df
 
 @cli.command()
-@click.option("--parameters", type=str)
-@click.option("--rainfall", type=str)
-@click.option("--pet", type=str)
-@click.option("--output", type=str, required=True)
+@click.option("--parameters", type=click.Path(exists=True), required=True)
+@click.option("--rainfall", type=click.Path(exists=True), required=True)
+@click.option("--pet", type=click.Path(exists=True), required=True)
+@click.option("--output", type=click.Path(exists=None), required=True)
 @click.pass_context
 def run(ctx, parameters, rainfall, pet, output):
     import pandas
