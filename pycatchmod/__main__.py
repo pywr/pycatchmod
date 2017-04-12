@@ -28,12 +28,23 @@ def compare(ctx, filename, plot):
     from pycatchmod.io.excel import compare
     compare(filename, plot)
 
+def date_parser(x):
+    import pandas
+    # try creating a date range based on the first date and the length
+    dates = pandas.period_range(x[0], periods=len(x), freq="D")
+    if pandas.Period(x.values[-1]) != dates[-1]:
+        # parse dates one by one (much slower)
+        dates = pandas.PeriodIndex(x.values, freq="D")
+    return dates
+
 def pandas_read(filename, key=None):
     import pandas  # TODO: move this somewhere else?
     if filename.endswith((".h5", ".hdf", ".hdf5")):
         df = pandas.read_hdf(filename, key=key)
     elif filename.endswith((".csv")):
-        df = pandas.read_csv(filename, parse_dates=True, dayfirst=True)
+        df = pandas.read_csv(filename)
+        # parse dates
+        df[df.columns[0]] = date_parser(df.loc[:, df.columns[0]])
         df.set_index(df.columns[0], inplace=True)
     return df
 
@@ -56,6 +67,8 @@ def run(ctx, parameters, rainfall, pet, output, output_key, rainfall_key, pet_ke
     from pycatchmod.io.excel import excel_parameter_adjustment
     from pycatchmod import run_catchmod
 
+    print("Loading input data...")
+
     # load rainfall and pet data
     rainfall = pandas_read(rainfall, rainfall_key)
     pet = pandas_read(pet, pet_key)
@@ -67,11 +80,12 @@ def run(ctx, parameters, rainfall, pet, output, output_key, rainfall_key, pet_ke
 
     idx0 = rainfall.index[0]
     idxN = rainfall.index[-1]
-    dates = pandas.date_range(idx0, idxN, freq="D")
+    dates = pandas.period_range(idx0, idxN, freq="D")
 
     # run catchmod
+    print("Running catchmod...")
     flows = run_catchmod(catchment, rainfall.values, pet.values, dates=dates)
-    print("Shape", flows.shape)
+    print("Shape:", flows.shape)
 
     df = pandas.DataFrame(flows, index=dates)
     df.index.name = "Date"

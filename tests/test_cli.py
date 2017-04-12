@@ -47,4 +47,6 @@ def test_run(runner, sample_data, extension):
     assert(os.path.exists(os.path.join(sample_data["folder"], "results."+extension)))
     df = pandas_read(os.path.join(sample_data["folder"], "results."+extension))
     assert(df.shape == (200, 5))
-    assert(pandas.Timestamp(df.index[0]) == pandas.Timestamp("1920-01-01"))
+    assert(pandas.Period(df.index[0]).year == 1920)
+    assert(pandas.Period(df.index[0]).month == 1)
+    assert(pandas.Period(df.index[0]).day == 1)
