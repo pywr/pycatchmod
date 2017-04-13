@@ -47,4 +47,23 @@ def test_run(runner, sample_data, extension):
     assert(os.path.exists(os.path.join(sample_data["folder"], "results."+extension)))
     df = pandas_read(os.path.join(sample_data["folder"], "results."+extension))
     assert(df.shape == (200, 5))
-    assert(pandas.Timestamp(df.index[0]) == pandas.Timestamp("1920-01-01"))
+    assert(pandas.Period(df.index[0]).year == 1920)
+    assert(pandas.Period(df.index[0]).month == 1)
+    assert(pandas.Period(df.index[0]).day == 1)
+
+@pytest.mark.parametrize("extension", ["csv", "h5"])
+def test_run3000(runner, tmpdir, extension):
+    output_filename = str(tmpdir.join("results."+extension))
+    result = runner.invoke(run, [
+        "--parameters", os.path.join(TEST_FOLDER, "data", "thames.json"),
+        "--rainfall", os.path.join(TEST_FOLDER, "data", "rainfall3000.csv"),
+        "--pet", os.path.join(TEST_FOLDER, "data", "pet3000.csv"),
+        "--output", output_filename,
+    ])
+    assert(result.exit_code == 0)
+    assert(os.path.exists(output_filename))
+    df = pandas_read(output_filename)
+    assert(df.shape == (31, 1))
+    assert(pandas.Period(df.index[0]).year == 3005)
+    assert(pandas.Period(df.index[0]).month == 1)
+    assert(pandas.Period(df.index[0]).day == 1)

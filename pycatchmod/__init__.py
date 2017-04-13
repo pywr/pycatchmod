@@ -26,8 +26,6 @@ def run_catchmod(C, rainfall, pet, dates=None):
     else:
         M2 = M
 
-    print(M, M2)
-
     perc = np.zeros((len(C.subcatchments), N))
     outflow = np.zeros_like(perc)
     total_outflow = np.zeros(M)
