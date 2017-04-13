@@ -1,6 +1,6 @@
 package:
   name: pycatchmod
-  version: "0.1"
+  version: "0.2"
 
 source:
   path: ../
@@ -13,7 +13,7 @@ requirements:
     - python
     - setuptools
     - cython
-    - numpy
+    - numpy x.x
 
     # not actually required, but setuptools trys to pull them in otherwise
     - pandas
@@ -23,7 +23,7 @@ requirements:
 
   run:
     - python
-    - numpy
+    - numpy x.x
     - pandas
     - pytables
     - click
