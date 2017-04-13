@@ -34,6 +34,7 @@ def date_parser(x):
     dates = pandas.period_range(x[0], periods=len(x), freq="D")
     if pandas.Period(x.values[-1]) != dates[-1]:
         # parse dates one by one (much slower)
+        # note this will assume american-style dates when faced with ambiguity
         dates = pandas.PeriodIndex(x.values, freq="D")
     return dates
 
@@ -94,7 +95,9 @@ def run(ctx, parameters, rainfall, pet, output, output_key, rainfall_key, pet_ke
     if output.endswith((".h5", ".hdf", ".hdf5")):
         df.to_hdf(output, key=output_key, mode=output_mode, complib=complib, complevel=complevel)
     elif output.endswith(".csv"):
-        df.to_csv(output)
+        # workaround for bug in pandas
+        # see https://github.com/pandas-dev/pandas/issues/15982
+        df.reset_index().to_csv(output, index=False)
     else:
         raise ValueError("Unrecognised output format.")
 
