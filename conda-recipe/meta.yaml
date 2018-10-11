@@ -12,6 +12,7 @@ requirements:
   build:
     - python
     - setuptools
+    - setuptools_scm
     - cython
     - numpy x.x
     - future
