@@ -1,0 +1,10 @@
+cython
+numpy
+packaging
+pytest
+pandas
+future
+xlrd
+tables
+click
+scipy
