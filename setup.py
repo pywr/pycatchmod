@@ -20,7 +20,7 @@ setup_requires = [
 ]
 # needed to run
 install_requires = [
-    "numpy", "pandas", "click", "tables", "xlrd", "scipy"
+    "numpy", "pandas", "click", "tables", "xlrd", "scipy", "future", "matplotlib"
 ]
 # only needed for testing
 test_requires = [
