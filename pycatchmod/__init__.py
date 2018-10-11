@@ -1,6 +1,11 @@
 from ._catchmod import SoilMoistureDeficitStore, LinearStore, NonLinearStore, SubCatchment, Catchment, OudinCatchment
+from pkg_resources import get_distribution, DistributionNotFound
+try:
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+    # package is not installed
+    pass
 
-__version__ = "0.2"
 
 def run_catchmod(C, rainfall, pet, dates=None):
     """Convenience function for running catchmod

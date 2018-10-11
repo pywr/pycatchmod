@@ -16,7 +16,7 @@ with open(os.path.join(os.path.dirname(__file__), "pycatchmod", "__init__.py"), 
 
 # needed to compile
 setup_requires = [
-    "cython", "numpy",
+    "cython", "numpy", "setuptools_scm"
 ]
 # needed to run
 install_requires = [
@@ -35,6 +35,7 @@ setup(
     author_email='tomo.bbe@gmail.com',
     packages=['pycatchmod', "pycatchmod.io"],
     install_requires=install_requires,
+    use_scm_version=True,
     setup_requires=setup_requires,
     tests_require=test_requires,
     ext_modules=[catchmod, weather_generator],
