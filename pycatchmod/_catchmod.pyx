@@ -463,6 +463,10 @@ cdef class OudinCatchment:
         self.subcatchments = list(subcatchments)
         self.name = name
 
+    cpdef reset(self):
+        for subcatchment in self.subcatchments:
+            subcatchment.reset()
+
     cpdef int step(self, int day_of_year, double[:] rainfall, double[:] temperature, double[:] pet,
                double[:, :] percolation, double[:, :] outflow) except -1:
         """ Step the catchment one timestep

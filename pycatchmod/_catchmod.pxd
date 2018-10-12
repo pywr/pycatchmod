@@ -12,8 +12,9 @@ cdef class OudinCatchment:
     """
     """
     cdef public basestring name
-    cdef list subcatchments
+    cdef public list subcatchments
     cdef public double latitude
 
+    cpdef reset(self)
     cpdef int step(self, int day_of_year, double[:] rainfall, double[:] temperature, double[:] pet,
                double[:, :] percolation, double[:, :] outflow) except -1
