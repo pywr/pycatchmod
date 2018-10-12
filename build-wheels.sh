@@ -3,9 +3,7 @@
 # Note this script does not build the wheels with lpsolve support.
 set -e -x
 
-
-export PYCATCHMOD_VERSION=0.2
-export PYCATCHMOD_TAG=v0.2
+export PYCATCHMOD_TAG=v1.0.0
 export WORKDIR=${HOME}
 
 cd ${WORKDIR}
