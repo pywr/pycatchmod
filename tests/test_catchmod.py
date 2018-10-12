@@ -55,7 +55,7 @@ def test_linear_store():
     store.step(I, O)
     # Solve system numerical for the first time-step. We use 1000 timesteps in the numerical integration
     # to test against the analytical mean value for the timestep.
-    t = np.linspace(0, 1.0, 1000.0)
+    t = np.linspace(0, 1.0, 1000)
     V = odeint(dVdt, 1.0*C, t, args=(I, C))
     # Test mean outflow
     np.testing.assert_allclose(V.mean()/C, O, rtol=1e-3)
@@ -98,7 +98,7 @@ def test_nonlinear_store():
     # Solve system numerical for the first time-step. Unlike the LinearStore there is no analytical solution given
     # for the mean outflow. Therefore we can use a single time-step in the numerical integration and average the result
     # to test against the analytical mean value for the timestep.
-    t = np.linspace(0, 1.0, 2.0)
+    t = np.linspace(0, 1.0, 2)
     V = odeint(dVdt, 0.0, t, args=(I, C))
     # Test mean outflow
     np.testing.assert_allclose(np.mean(V**2/C), O, rtol=1e-3)
