@@ -9,25 +9,29 @@ build:
   number: 0
 
 requirements:
-  build:
+  host:
     - python
     - setuptools
+    - setuptools_scm
     - cython
-    - numpy x.x
-
+    - numpy
+    - future
     # not actually required, but setuptools trys to pull them in otherwise
     - pandas
     - pytables
     - click
     - xlrd
+    - matplotlib
 
   run:
     - python
-    - numpy x.x
+    - {{ pin_compatible('numpy') }}
     - pandas
     - pytables
     - click
     - xlrd
+    - future
+    - matplotlib
 
 test:
   imports:

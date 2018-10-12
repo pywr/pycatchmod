@@ -16,11 +16,11 @@ with open(os.path.join(os.path.dirname(__file__), "pycatchmod", "__init__.py"), 
 
 # needed to compile
 setup_requires = [
-    "cython", "numpy",
+    "cython", "numpy", "setuptools_scm"
 ]
 # needed to run
 install_requires = [
-    "numpy", "pandas", "click", "tables", "xlrd"
+    "numpy", "pandas", "click", "tables", "xlrd", "scipy", "future", "matplotlib"
 ]
 # only needed for testing
 test_requires = [
@@ -29,12 +29,12 @@ test_requires = [
 
 setup(
     name='pycatchmod',
-    version=version,
     description='Python implementation of the rainfall runoff model CATCHMOD.',
     author='James E Tomlinson',
     author_email='tomo.bbe@gmail.com',
     packages=['pycatchmod', "pycatchmod.io"],
     install_requires=install_requires,
+    use_scm_version=True,
     setup_requires=setup_requires,
     tests_require=test_requires,
     ext_modules=[catchmod, weather_generator],
