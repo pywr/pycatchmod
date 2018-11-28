@@ -7,7 +7,7 @@ except DistributionNotFound:
     pass
 
 
-def run_catchmod(C, rainfall, pet, dates=None):
+def run_catchmod(C, rainfall, pet, dates=None, output_total=True):
     """Convenience function for running catchmod
 
     Parameters
@@ -22,6 +22,7 @@ def run_catchmod(C, rainfall, pet, dates=None):
     # number of scenarios
     N = C.subcatchments[0].soil_store.initial_upper_deficit.shape[0]
     assert(rainfall.shape[1] == N)
+    assert(pet.shape[1] == N)
 
     # input timesteps
     M = rainfall.shape[0]
@@ -35,7 +36,7 @@ def run_catchmod(C, rainfall, pet, dates=None):
     outflow = np.zeros_like(perc)
     total_outflow = np.zeros(M)
     flow = np.zeros([M2, N])
-    flows = np.zeros([M2, len(C.subcatchments)])
+    flows = np.zeros([M2, len(C.subcatchments), N])
 
     # TODO: add option to enable/disable extra leap days
 
@@ -52,9 +53,13 @@ def run_catchmod(C, rainfall, pet, dates=None):
 
         C.step(r, p, perc, outflow)
 
-        flows[j, ...] = outflow[:,0]
-        flow[j, ...] = outflow.sum(axis=0).reshape(rainfall.shape[1:])
+        for scenario in range(N):
+            flows[j, :, scenario] = outflow[:, scenario]
 
+        # flow[j, ...] = outflow.sum(axis=0).reshape(rainfall.shape[1:])
         i += 1
 
-    return flow
+    if output_total:
+        return flows.sum(axis=1)
+    else:
+        return flows
