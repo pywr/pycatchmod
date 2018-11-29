@@ -27,9 +27,14 @@ test_requires = [
     "pytest"
 ]
 
+with open('README.rst') as fh:
+    long_description = fh.read()
+
 setup(
     name='pycatchmod',
     description='Python implementation of the rainfall runoff model CATCHMOD.',
+    long_description= long_description,
+    long_description_content_type='text/x-rst',
     author='James E Tomlinson',
     author_email='tomo.bbe@gmail.com',
     packages=['pycatchmod', "pycatchmod.io"],
