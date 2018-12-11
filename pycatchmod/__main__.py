@@ -55,7 +55,7 @@ def pandas_read(filename, key=None):
 @click.option("--rainfall-key", type=str, required=False, default=None, help="Key for input rainfall data (h5 files only)")
 @click.option("--pet", type=click.Path(exists=True), required=True, help="Path to input PET data")
 @click.option("--pet-key", type=str, required=False, default=None, help="Key for input PET data (h5 files only)")
-@click.option("--total/--no-total", default=True)
+@click.option("--total/--no-total", default=True, help="Flag to output total catchment flows or area flows")
 @click.option("--output", type=click.Path(exists=None), required=True, help="Path to output file (with .csv or .h5 extension)")
 @click.option("--output-key", type=str, default="flows", required=False, help="Key for output data (h5 files only)")
 @click.option("--output-mode", type=click.Choice(["w", "a", "r+"]), default="a", required=False, help="Mode for output file (h5 files only)")

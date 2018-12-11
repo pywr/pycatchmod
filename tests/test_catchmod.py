@@ -231,9 +231,13 @@ def test_catchment():
     # TODO test outflow
     assert np.all(np.isfinite(outflow))
 
-@pytest.mark.parametrize("leap", [True, False])
-def test_run_catchmod(leap):
-    shape = [200, 3]
+
+@pytest.mark.parametrize("leap,total_flows", [(True, True), (True, False), (False, True), (False, False)])
+def test_run_catchmod(leap, total_flows):
+    """ Test the shape of output is correct if when there are leap dates/no leap days
+    and for returning total flows or individual subcatchment flows
+    """
+    shape = [200, 4]
     catchment = catchment_from_json(os.path.join(os.path.dirname(__file__), "data", "thames.json"), n=shape[1])
     dates = pandas.date_range("1920-01-01", periods=200, freq="D")
     if leap:
@@ -242,6 +246,34 @@ def test_run_catchmod(leap):
         shape[0] -= num_leap
     rainfall = np.ones(shape)
     pet = np.zeros(shape)
-    flow = run_catchmod(catchment, rainfall, pet, dates)
+    flow = run_catchmod(catchment, rainfall, pet, dates, total_flows)
+
     assert(flow.shape[0] == len(dates))
-    assert(flow.shape[1] == rainfall.shape[1])
+    if total_flows:
+        assert(len(flow.shape) == 2)
+        assert (flow.shape[1] == rainfall.shape[1])
+    else:
+        assert(len(flow.shape) == 3)
+        assert (flow.shape[1] == len(catchment.subcatchments))
+        assert (flow.shape[2] == rainfall.shape[1])
+
+
+def test_run_catchmod_subcatchment_flows():
+    """ test the subcatchment flows returned sum to the returned total flows """
+
+    catchment = catchment_from_json(os.path.join(os.path.dirname(__file__), "data", "thames.json"), n=2)
+    dates = pandas.date_range("1920-01-01", periods=200, freq="D")
+
+    rainfall = np.random.randint(0, 20, [200, 2])
+    pet = np.random.randint(0, 5, [200, 2])
+
+    flow_total = run_catchmod(catchment, rainfall, pet, dates, output_total=True)
+    flow_subcatchment = run_catchmod(catchment, rainfall, pet, dates, output_total=False)
+
+    np.testing.assert_equal(flow_total, flow_subcatchment.sum(axis=1))
+
+    # test correct flow reshape in __main__
+    flow_reshape = flow_subcatchment.reshape((len(dates), len(catchment.subcatchments) * 2), order='F')
+
+    np.testing.assert_equal(flow_reshape[:, 0], flow_subcatchment[:, 0, 0])
+    np.testing.assert_equal(flow_reshape[:, 3], flow_subcatchment[:, 0, 1])

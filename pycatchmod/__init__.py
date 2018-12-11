@@ -34,8 +34,7 @@ def run_catchmod(C, rainfall, pet, dates=None, output_total=True):
 
     perc = np.zeros((len(C.subcatchments), N))
     outflow = np.zeros_like(perc)
-    total_outflow = np.zeros(M)
-    flow = np.zeros([M2, N])
+
     flows = np.zeros([M2, len(C.subcatchments), N])
 
     # TODO: add option to enable/disable extra leap days
@@ -56,7 +55,6 @@ def run_catchmod(C, rainfall, pet, dates=None, output_total=True):
         for scenario in range(N):
             flows[j, :, scenario] = outflow[:, scenario]
 
-        # flow[j, ...] = outflow.sum(axis=0).reshape(rainfall.shape[1:])
         i += 1
 
     if output_total:
