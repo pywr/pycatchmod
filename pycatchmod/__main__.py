@@ -93,7 +93,7 @@ def run(ctx, parameters, rainfall, pet, total, output, output_key, rainfall_key,
         df = pandas.DataFrame(flows, index=dates)
         df.index.name = "Date"
     else:
-        flows = flows.reshape((len(dates), len(catchment.subcatchments) * num_scenarios), order='F')
+        flows = flows.reshape((len(dates), len(catchment.subcatchments) * num_scenarios), order='C')
         df = pandas.DataFrame(flows,
                               columns=pandas.MultiIndex.from_product([range(num_scenarios),
                                                                       [x.name for x in catchment.subcatchments]],
