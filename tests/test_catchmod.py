@@ -270,10 +270,10 @@ def test_run_catchmod_subcatchment_flows():
     flow_total = run_catchmod(catchment, rainfall, pet, dates, output_total=True)
     flow_subcatchment = run_catchmod(catchment, rainfall, pet, dates, output_total=False)
 
-    np.testing.assert_equal(flow_total, flow_subcatchment.sum(axis=2))
+    np.testing.assert_allclose(flow_total, flow_subcatchment.sum(axis=2))
 
     # test correct flow reshape in __main__
     flow_reshape = flow_subcatchment.reshape((len(dates), len(catchment.subcatchments) * 2), order='C')
 
-    np.testing.assert_equal(flow_reshape[:, 0], flow_subcatchment[:, 0, 0])
-    np.testing.assert_equal(flow_reshape[:, 3], flow_subcatchment[:, 1, 0])
+    np.testing.assert_allclose(flow_reshape[:, 0], flow_subcatchment[:, 0, 0])
+    np.testing.assert_allclose(flow_reshape[:, 3], flow_subcatchment[:, 1, 0])
