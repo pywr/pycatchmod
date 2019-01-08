@@ -32,7 +32,8 @@ def catchment_from_json(filename, n=1):
             gradient_drying_curve=subdata['gradient_drying_curve'],
             linear_storage_constant=subdata['linear_storage_constant'],
             nonlinear_storage_constant=subdata['nonlinear_storage_constant'],
-            legacy=data.get("legacy", False)
+            legacy=data.get("legacy", False),
+            name=subdata['name']
         ))
 
     klass = data.get('class', 'Catchment')
