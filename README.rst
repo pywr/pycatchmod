@@ -81,6 +81,21 @@ You can use the :code:`compare` command to compare the results of pycatchmod and
     pycatchmod compare --filename thames.xls --plot
 
 =======
+Changes
+=======
+
+Version 1.1.0
+=============
+
+- Added feature to output flow per area.
+
+Version 1.0.0
+=============
+
+- Initial release
+
+
+=======
 Licence
 =======
 
@@ -90,8 +105,9 @@ This work is licenced under the GNU General Public Licence Version 3 (GNU GPLv3)
 Authors
 =======
 
-- James Tomlinson (<james.tomlinson@postgrad.manchester.ac.uk>)
+- James Tomlinson (<james.tomlinson@manchester.ac.uk>)
 - Joshua Arnott (<josh@snorfalorpagus.net>)
+- Lauren Petch
 
 ================
 Acknowledgements
