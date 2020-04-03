@@ -37,6 +37,7 @@ setup(
     long_description_content_type='text/x-rst',
     author='James E Tomlinson',
     author_email='tomo.bbe@gmail.com',
+    url="https://github.com/pywr/pycatchmod",
     packages=['pycatchmod', "pycatchmod.io"],
     install_requires=install_requires,
     use_scm_version=True,
